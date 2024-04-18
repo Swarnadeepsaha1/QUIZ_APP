@@ -5,59 +5,51 @@ import NavBar from "../NavBar";
 import QuestionTab from "./QuestionTab";
 import StoreContext, { QUESTION_PER_PAGE } from "@/context/StoreContext";
 import Logout from "../Logout";
+import strictlyAuthorized from "@/hoc/strictlyAuthorized";
 
-function QuestionContainer() 
-{
+function QuestionContainer() {
   const storeContext = useContext(StoreContext);
   const [panes, setPanes] = useState([]);
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const [questionBook, setQuestionBook] = useState([]);
 
   useEffect(() => {
-    if (!localStorage.getItem('isLoggedIn')) { // Check login status
-      router.push("/"); // Client-side redirect using useRouter
-    }
-  }, []);
-
-  useEffect(() => {
     const questionBook = [];
-    storeContext?.examData?.forEach((qns) => 
-    {
+    storeContext?.examData?.forEach((qns) => {
       let chapterIndex = questionBook.findIndex(
         (chapter) => qns.type === chapter.title
       );
-      if (chapterIndex === -1) 
-      {
+      if (chapterIndex === -1) {
         questionBook.push({
           title: qns?.type,
           currentPageIndex: 0,
           totalPage: 1,
           questions: [[qns]],
         });
-      }
-      else
-      {
+      } else {
         //This condition checks if the number of questions in the last page (section) of the current chapter is less than QUESTION_PER_PAGE. If there's still space for more questions on the current page, it executes the first block of code.
-        if (questionBook[chapterIndex].questions[questionBook[chapterIndex].questions.length - 1].length < QUESTION_PER_PAGE) 
-        {
-          questionBook[chapterIndex].questions[questionBook[chapterIndex].questions.length - 1].push(qns);
-        } 
-      /*  If the current page is full, we need to start a new page for the questions.
-        * Increment totalPage count for the current chapter.
-        * Push a new array containing the new question qns into the questions array of the current chapter. This new array represents the first page of the next set of questions in the chapter.*/  
-        else 
-        {
+        if (
+          questionBook[chapterIndex].questions[
+            questionBook[chapterIndex].questions.length - 1
+          ].length < QUESTION_PER_PAGE
+        ) {
+          questionBook[chapterIndex].questions[
+            questionBook[chapterIndex].questions.length - 1
+          ].push(qns);
+        } else {
+          /*  If the current page is full, we need to start a new page for the questions.
+           * Increment totalPage count for the current chapter.
+           * Push a new array containing the new question qns into the questions array of the current chapter. This new array represents the first page of the next set of questions in the chapter.*/
           questionBook[chapterIndex].totalPage += 1;
           questionBook[chapterIndex].questions.push([qns]);
         }
       }
     });
 
-  setQuestionBook(questionBook);
+    setQuestionBook(questionBook);
   }, [storeContext.examData]);
 
-  useEffect(() => 
-  {
+  useEffect(() => {
     configurePanes();
   }, [questionBook]);
 
@@ -67,18 +59,13 @@ function QuestionContainer()
     if (
       currentPageIndex === totalPage - 1 &&
       chapterIndex === questionBook.length - 1
-    )
-    {
+    ) {
       console.log("END reached");
-    } 
-    else if (currentPageIndex === totalPage - 1) 
-    {
+    } else if (currentPageIndex === totalPage - 1) {
       newBook[chapterIndex + 1].currentPageIndex = 0;
       setQuestionBook(newBook);
       setCurrentTabIndex((val) => val + 1);
-    } 
-    else 
-    {
+    } else {
       newBook[chapterIndex].currentPageIndex += 1;
       setQuestionBook(newBook);
     }
@@ -87,19 +74,14 @@ function QuestionContainer()
   const handleOnPrevious = (chapterIndex, currentPageIndex, totalPage) => {
     console.log(chapterIndex, currentPageIndex, totalPage, questionBook);
     const newBook = [...questionBook];
-    if (currentPageIndex === 0 && chapterIndex === 0)
-    {
+    if (currentPageIndex === 0 && chapterIndex === 0) {
       console.log("Start reached");
-    } 
-    else if (currentPageIndex === 0) 
-    {
+    } else if (currentPageIndex === 0) {
       newBook[chapterIndex - 1].currentPageIndex =
         newBook[chapterIndex - 1].totalPage - 1;
       setQuestionBook(newBook);
       setCurrentTabIndex((val) => val - 1);
-    } 
-    else 
-    {
+    } else {
       newBook[chapterIndex].currentPageIndex -= 1;
       setQuestionBook(newBook);
     }
@@ -109,8 +91,7 @@ function QuestionContainer()
     console.log("On Submit");
   };
 
-  const configurePanes = () => 
-  {
+  const configurePanes = () => {
     const panes = [];
     questionBook.forEach((chapter, index) => {
       panes.push({
@@ -118,22 +99,31 @@ function QuestionContainer()
         render: () => (
           <QuestionTab
             questions={chapter.questions[chapter.currentPageIndex]}
-            onNext={chapter.currentPageIndex === chapter.totalPage - 1 && index === questionBook.length - 1? null: () =>
+            onNext={
+              chapter.currentPageIndex === chapter.totalPage - 1 &&
+              index === questionBook.length - 1
+                ? null
+                : () =>
                     handleOnNext(
                       index,
                       chapter.currentPageIndex,
                       chapter.totalPage
                     )
-                  }
-            onPrevious={chapter.currentPageIndex === 0 && index === 0 ? null: () =>
+            }
+            onPrevious={
+              chapter.currentPageIndex === 0 && index === 0
+                ? null
+                : () =>
                     handleOnPrevious(
                       index,
                       chapter.currentPageIndex,
                       chapter.totalPage
                     )
-                   }
-            onSubmit={chapter.currentPageIndex === chapter.totalPage - 1 && index === questionBook.length - 1? 
-            handleOnSubmit
+            }
+            onSubmit={
+              chapter.currentPageIndex === chapter.totalPage - 1 &&
+              index === questionBook.length - 1
+                ? handleOnSubmit
                 : null
             }
           />
@@ -147,9 +137,6 @@ function QuestionContainer()
   const handleTabChange = (e, { activeIndex }) => {
     setCurrentTabIndex(activeIndex);
   };
-
-  
-  
 
   return (
     <>
@@ -167,4 +154,4 @@ function QuestionContainer()
   );
 }
 
-export default QuestionContainer;
+export default strictlyAuthorized(QuestionContainer);

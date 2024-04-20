@@ -1,10 +1,14 @@
 "use client";
+
 import { useEffect } from "react";
 import { redirect } from "next/navigation";
 
 export default function strictlyAuthorized(Component) {
   return function IsAuth(props) {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const isLoggedIn =
+      typeof window === "undefined"
+        ? false
+        : localStorage.getItem("isLoggedIn");
     console.log(isLoggedIn);
 
     useEffect(() => {
